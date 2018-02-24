@@ -1,7 +1,7 @@
 function Get-Bookmark {
     Param(
         # The name of the bookmark to return
-        [Parameter(Mandatory=$false, Position=1)]
+        [Parameter(Mandatory = $false, Position = 1)]
         [String]
         $Name
     )

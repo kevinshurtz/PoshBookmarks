@@ -1,7 +1,7 @@
 function Remove-Bookmark {
     Param(
         # The name of the bookmark to remove
-        [Parameter(Mandatory=$true, Position=1)]
+        [Parameter(Mandatory = $true, Position = 1)]
         [String]
         $Name
     )

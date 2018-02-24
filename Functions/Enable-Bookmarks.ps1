@@ -1,7 +1,7 @@
 function Enable-Bookmarks {
     Param(
         # Optional custom load/save location
-        [Parameter(Mandatory=$false, Position=1)]
+        [Parameter(Mandatory = $false, Position = 1)]
         [String]
         $CustomLocation
     )

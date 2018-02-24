@@ -75,8 +75,8 @@ Class BookmarkDirectory {
             # The Bookmarks property in the CLIXML file cannot be deserialized directly into a Dictionary
             foreach ($bookmarkKey in $deserializedBookmarks.Bookmarks.Keys) {
                 [System.IO.DirectoryInfo] $bookmarkValue =
-                    [System.IO.DirectoryInfo]::new(
-                        $deserializedBookmarks.Bookmarks[$bookmarkKey].FullName);
+                [System.IO.DirectoryInfo]::new(
+                    $deserializedBookmarks.Bookmarks[$bookmarkKey].FullName);
                 $this.Bookmarks.Add($bookmarkKey, $bookmarkValue);
             }
 
