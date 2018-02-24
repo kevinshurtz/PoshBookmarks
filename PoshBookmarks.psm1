@@ -22,6 +22,7 @@ New-Alias -Name 'gbm' -Value 'Get-Bookmark'
 New-Alias -Name 'abm' -Value 'Add-Bookmark'
 New-Alias -Name 'sbm' -Value 'Set-Bookmark'
 New-Alias -Name 'rbm' -Value 'Remove-Bookmark'
+New-Alias -Name 'ubm' -Value 'Use-Bookmark'
 New-Alias -Name 'glsd' -Value 'Get-LastSessionDirectory'
 
 # Export public functions
@@ -32,10 +33,12 @@ Export-ModuleMember -Function 'Remove-Bookmark'
 Export-ModuleMember -Function 'Get-LastSessionDirectory'
 Export-ModuleMember -Function 'Enable-Bookmarks'
 Export-ModuleMember -Function 'Disable-Bookmarks'
+Export-ModuleMember -Function 'Use-Bookmark'
 
 # Export public aliases
 Export-ModuleMember -Alias 'gbm'
 Export-ModuleMember -Alias 'abm'
 Export-ModuleMember -Alias 'sbm'
 Export-ModuleMember -Alias 'rbm'
+Export-ModuleMember -Alias 'ubm'
 Export-ModuleMember -Alias 'glsd'
