@@ -1,12 +1,12 @@
 function Add-Bookmark {
     Param(
         # The name of the bookmark to add
-        [Parameter(Mandatory = $true, Position = 1)]
+        [Parameter(Mandatory = $true, Position = 0)]
         [String]
         $Name,
 
         # The path of the target location
-        [Parameter(Mandatory = $true, Position = 2)]
+        [Parameter(Mandatory = $true, Position = 1)]
         [String]
         $Path
     )
