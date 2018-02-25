@@ -1,18 +1,45 @@
 function Get-Bookmark {
-    Param(
-        # The name of the bookmark to return
-        [Parameter(Mandatory = $false, Position = 1)]
-        [String]
-        $Name
-    )
+    [CmdletBinding()]
+    Param()
 
-    $bookmarks = [BookmarkDirectory]::GetInstance()
+    DynamicParam {
+        $parameterName = 'Name'
+        $runtimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
+        
+        # Create paramter attributes
+        $attributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
 
-    # Return either the set of all bookmarks, or an individual bookmark
-    if ($PSBoundParameters.ContainsKey('Name')) {
-        return $bookmarks.Bookmarks[$Name]
+        $parameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+        $parameterAttribute.Mandatory = $false
+        $parameterAttribute.Position = 0
+
+        $attributeCollection.Add($ParameterAttribute)
+
+        # Add proper bookmark validation set to parameter
+        $bookmarks = [BookmarkDirectory]::GetInstance()
+
+        $bookmarkOpts = $bookmarks.Bookmarks.Keys
+        $validateSetAttribute = [System.Management.Automation.ValidateSetAttribute]::new($bookmarkOpts)
+        $attributeCollection.Add($validateSetAttribute)
+
+        # Create dynamic parameter
+        $runtimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new($parameterName, [String], $attributeCollection)
+        $runtimeParameterDictionary.Add($parameterName, $runtimeParameter)
+        return $runtimeParameterDictionary
     }
-    else {
-        return $bookmarks.Bookmarks
+
+    Begin {
+        $Name = $PSBoundParameters[$parameterName]
+        $bookmarks = [BookmarkDirectory]::GetInstance()
+    }
+
+    Process {
+        # Return either the set of all bookmarks, or an individual bookmark
+        if ($PSBoundParameters.ContainsKey('Name')) {
+            return $bookmarks.Bookmarks[$Name]
+        }
+        else {
+            return $bookmarks.Bookmarks
+        }
     }
 }

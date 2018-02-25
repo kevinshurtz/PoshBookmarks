@@ -1,11 +1,41 @@
 function Remove-Bookmark {
-    Param(
-        # The name of the bookmark to remove
-        [Parameter(Mandatory = $true, Position = 1)]
-        [String]
-        $Name
-    )
+    [CmdletBinding()]
+    Param()
 
-    $bookmarks = [BookmarkDirectory]::GetInstance()
-    $bookmarks.Bookmarks.Remove($Name) | Out-Null
+    DynamicParam {
+        $parameterName = 'Name'
+        $runtimeParameterDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
+        
+        # Create paramter attributes
+        $attributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+
+        $parameterAttribute = [System.Management.Automation.ParameterAttribute]::new()
+        $parameterAttribute.Mandatory = $true
+        $parameterAttribute.Position = 0
+        $parameterAttribute.ValueFromPipeline = $true
+        $parameterAttribute.ValueFromPipelineByPropertyName = $true
+
+        $attributeCollection.Add($ParameterAttribute)
+
+        # Add proper bookmark validation set to parameter
+        $bookmarks = [BookmarkDirectory]::GetInstance()
+
+        $bookmarkOpts = $bookmarks.Bookmarks.Keys
+        $validateSetAttribute = [System.Management.Automation.ValidateSetAttribute]::new($bookmarkOpts)
+        $attributeCollection.Add($validateSetAttribute)
+
+        # Create dynamic parameter
+        $runtimeParameter = [System.Management.Automation.RuntimeDefinedParameter]::new($parameterName, [String], $attributeCollection)
+        $runtimeParameterDictionary.Add($parameterName, $runtimeParameter)
+        return $runtimeParameterDictionary
+    }
+
+    Begin {
+        $Name = $PSBoundParameters[$parameterName]
+        $bookmarks = [BookmarkDirectory]::GetInstance()
+    }
+
+    Process {
+        $bookmarks.Bookmarks.Remove($Name) | Out-Null
+    }
 }
