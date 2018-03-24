@@ -17,6 +17,9 @@ else {
 "$moduleRoot\Classes\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
 "$moduleRoot\Functions\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
 
+# Create Bookmark singleton
+[BookmarkDirectory]::GetInstance() | Out-Null
+
 # Create aliases for interacting with bookmarks
 New-Alias -Name 'gbm' -Value 'Get-Bookmark'
 New-Alias -Name 'abm' -Value 'Add-Bookmark'

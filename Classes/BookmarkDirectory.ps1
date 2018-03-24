@@ -4,19 +4,22 @@ Class BookmarkDirectory {
     [System.IO.DirectoryInfo] $LastSessionDirectory;
 
     [Int32] $eventSubscriberId;
-    [DateTime] $saveLocationLastUpdate;
+    [DateTime] $saveLocationLastWriteTime;
+    [String] $saveLocation;
     
     static [String] $defaultSaveLocation = "$env:HOMEPATH\Documents\WindowsPowerShell\SessionData\SessionBookmarks.clixml";
     static [BookmarkDirectory] $singleBookmarkDir;
     
     # Load bookmark data from default location, unless othewise specified
     BookmarkDirectory([String] $path) {
-        $this.Bookmarks = [System.Collections.Generic.Dictionary[String, System.IO.DirectoryInfo]]::new()
+        $this.saveLocation = $path;
+        $this.Bookmarks = [System.Collections.Generic.Dictionary[String, System.IO.DirectoryInfo]]::new();
         $this.LoadBookmarkDirectory($path);
     }
 
     # Default constructor without loading preferable when using Import-Clixml
     BookmarkDirectory() {
+        $this.saveLocation = [BookmarkDirectory]::defaultSaveLocation;
         $this.Bookmarks = [System.Collections.Generic.Dictionary[String, System.IO.DirectoryInfo]]::new()
     }
 
@@ -37,7 +40,7 @@ Class BookmarkDirectory {
         return [BookmarkDirectory]::singleBookmarkDir;
     }
 
-    static [BookmarkDirectory] GetCustomInstance([String] $customLocation) {
+    static [BookmarkDirectory] GetInstance([String] $customLocation) {
         if ([BookmarkDirectory]::singleBookmarkDir -eq $null) {
             [BookmarkDirectory]::singleBookmarkDir = [BookmarkDirectory]::new($customLocation);
 
@@ -51,6 +54,18 @@ Class BookmarkDirectory {
             $[BookmarkDirectory]::singleBookmarkDir.eventSubscriberId = $saveBookmarksEventSubscriber.Id;
         }
 
+        # If the requested $customLocation differs from the current location, replace the current BookmarkDirectory
+        $bookmark = [BookmarkDirectory]::singleBookmarkDir;
+
+        if ($bookmark.saveLocation -ne $customLocation) {
+            # Deregister exit event for current instance of BookmarkDirectory
+            $bookmark.DisableSaveOnExit();
+            $bookmark = $null;
+
+            # Create a new instance of BookmarkDirectory
+            [BookmarkDirectory]::new($customLocation);
+        }
+
         return [BookmarkDirectory]::singleBookmarkDir;
     }
 
@@ -62,7 +77,7 @@ Class BookmarkDirectory {
     # Write bookmark data to disk, typically invoked before exit
     [void] SaveBookmarkDirectory([String] $path) {
         try {
-            if ($this.promptOverwriteConfiguration()) {
+            if ((Get-Item -Path $path).LastWriteTime -gt $this.saveLocationLastWriteTime -and $this.promptOverwriteConfiguration()) {
                 Export-Clixml -Path $path -InputObject $this;
             }
         }
@@ -77,7 +92,7 @@ Class BookmarkDirectory {
     [void] LoadBookmarkDirectory([String] $path) {
         try {
             # Save the last write time of the file
-            $this.saveLocationLastUpdate = (Get-Item -Path $path).LastWriteTime;
+            $this.saveLocationLastWriteTime = (Get-Item -Path $path).LastWriteTime;
 
             # PSObject with bookmark directory properties from prior session
             $deserializedBookmarks = Import-Clixml $path;
