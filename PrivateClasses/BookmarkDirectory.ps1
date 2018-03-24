@@ -77,7 +77,13 @@ Class BookmarkDirectory {
     # Write bookmark data to disk, typically invoked before exit
     [void] SaveBookmarkDirectory([String] $path) {
         try {
-            if ((Get-Item -Path $path).LastWriteTime -gt $this.saveLocationLastWriteTime -and $this.promptOverwriteConfiguration()) {
+            $overwriteGranted = $true;
+
+            if ((Get-Item -Path $path).LastWriteTime -gt $this.saveLocationLastWriteTime) {
+                $overwriteGranted = $this.promptOverwriteConfiguration();
+            }
+
+            if ($overwriteGranted) {
                 Export-Clixml -Path $path -InputObject $this;
             }
         }
