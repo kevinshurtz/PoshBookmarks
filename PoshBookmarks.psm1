@@ -14,8 +14,8 @@ else {
 }
 
 # Dot-source all source files, starting with any classes
-"$moduleRoot\Classes\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
-"$moduleRoot\Functions\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
+"$moduleRoot\PrivateClasses\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
+"$moduleRoot\Public\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
 
 # Create Bookmark singleton
 [BookmarkDirectory]::GetInstance() | Out-Null
