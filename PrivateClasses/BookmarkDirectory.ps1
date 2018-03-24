@@ -7,7 +7,7 @@ Class BookmarkDirectory {
     [DateTime] $saveLocationLastWriteTime;
     [String] $saveLocation;
     
-    static [String] $defaultSaveLocation = "$env:HOMEPATH\Documents\WindowsPowerShell\SessionData\SessionBookmarks.clixml";
+    static [String] $defaultSaveLocation = "$env:HOMEPATH\Documents\WindowsPowerShell\SessionData\SessionBookmarks.xml";
     static [BookmarkDirectory] $singleBookmarkDir;
     
     # Load bookmark data from default location, unless othewise specified
@@ -34,7 +34,7 @@ Class BookmarkDirectory {
             }
 
             # Save event subscriber ID for potential later deregistration
-            $[BookmarkDirectory]::singleBookmarkDir.eventSubscriberId = $saveBookmarksEventSubscriber.Id;
+            [BookmarkDirectory]::singleBookmarkDir.eventSubscriberId = $saveBookmarksEventSubscriber.Id;
         }
 
         return [BookmarkDirectory]::singleBookmarkDir;
@@ -51,7 +51,7 @@ Class BookmarkDirectory {
             }
 
             # Save event subscriber ID for potential later deregistration
-            $[BookmarkDirectory]::singleBookmarkDir.eventSubscriberId = $saveBookmarksEventSubscriber.Id;
+            [BookmarkDirectory]::singleBookmarkDir.eventSubscriberId = $saveBookmarksEventSubscriber.Id;
         }
 
         # If the requested $customLocation differs from the current location, replace the current BookmarkDirectory
