@@ -55,9 +55,9 @@ Kevin> sl (gbm goog) # Alternatively: gbm goog | sl
 Google Drive>
 ```
 ```
-kevin> # Navigating directly to a bookmark with 'use-bookmark'
-kevin> add-bookmark 'goog' 'c:\users\kevin\google drive\'
-kevin> use-bookmark goog
+Kevin> # Navigating directly to a bookmark with 'use-bookmark'
+Kevin> add-bookmark 'goog' 'c:\users\kevin\google drive\'
+Kevin> use-bookmark goog
 google drive>
 ```
 ```
