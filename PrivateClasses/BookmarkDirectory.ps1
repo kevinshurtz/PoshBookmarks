@@ -3,15 +3,15 @@ Class BookmarkDirectory {
     [System.Collections.Generic.Dictionary[String, System.IO.DirectoryInfo]] $Bookmarks;
     [System.IO.DirectoryInfo] $LastSessionDirectory;
 
-    [Int32] $eventSubscriberId;
-    [DateTime] $saveLocationLastWriteTime;
-    [String] $saveLocation;
+    [int] $eventSubscriptionId;
+    [datetime] $saveLocationLastWriteTime;
+    [string] $saveLocation;
     
-    static [String] $defaultSaveLocation = "$env:HOMEPATH\Documents\WindowsPowerShell\SessionData\SessionBookmarks.xml";
+    static [string] $defaultSaveLocation = "$env:HOMEPATH\Documents\WindowsPowerShell\SessionData\SessionBookmarks.xml";
     static [BookmarkDirectory] $singleBookmarkDir;
     
     # Load bookmark data from default location, unless othewise specified
-    BookmarkDirectory([String] $path) {
+    BookmarkDirectory([string] $path) {
         $this.saveLocation = $path;
         $this.Bookmarks = [System.Collections.Generic.Dictionary[String, System.IO.DirectoryInfo]]::new();
         $this.LoadBookmarkDirectory($path);
@@ -28,58 +28,50 @@ Class BookmarkDirectory {
             [BookmarkDirectory]::singleBookmarkDir = [BookmarkDirectory]::new([BookmarkDirectory]::defaultSaveLocation);
 
             # Save bookmarks on exit
-            $saveBookmarksEventSubscriber = Register-EngineEvent PowerShell.Exiting -Action {
-                [BookmarkDirectory]::GetInstance().UpdateLastSessionDirectory((Get-Location).Path);
-                [BookmarkDirectory]::GetInstance().SaveBookmarkDirectory([BookmarkDirectory]::defaultSaveLocation);
-            }
-
-            # Save event subscriber ID for potential later deregistration
-            [BookmarkDirectory]::singleBookmarkDir.eventSubscriberId = $saveBookmarksEventSubscriber.Id;
+            [BookmarkDirectory]::singleBookmarkDir.EnableSaveOnExit();
         }
 
         return [BookmarkDirectory]::singleBookmarkDir;
     }
 
-    static [BookmarkDirectory] GetInstance([String] $customLocation) {
+    static [BookmarkDirectory] GetInstance([string] $location) {
+        # Ensure that path is absolute before instantiation or comparison
+        $location = Resolve-Path -Path $location
+
         if ([BookmarkDirectory]::singleBookmarkDir -eq $null) {
-            [BookmarkDirectory]::singleBookmarkDir = [BookmarkDirectory]::new($customLocation);
+            [BookmarkDirectory]::singleBookmarkDir = [BookmarkDirectory]::new($location);
 
             # Save bookmarks on exit
-            $saveBookmarksEventSubscriber = Register-EngineEvent PowerShell.Exiting -Action {
-                [BookmarkDirectory]::GetInstance().UpdateLastSessionDirectory((Get-Location).Path);
-                [BookmarkDirectory]::GetInstance().SaveBookmarkDirectory($customLocation);
-            }
-
-            # Save event subscriber ID for potential later deregistration
-            [BookmarkDirectory]::singleBookmarkDir.eventSubscriberId = $saveBookmarksEventSubscriber.Id;
+            [BookmarkDirectory]::singleBookmarkDir.EnableSaveOnExit();
         }
 
-        # If the requested $customLocation differs from the current location, replace the current BookmarkDirectory
-        $bookmark = [BookmarkDirectory]::singleBookmarkDir;
-
-        if ($bookmark.saveLocation -ne $customLocation) {
+        # If the requested $location differs from the current location, replace the current BookmarkDirectory
+        if ([BookmarkDirectory]::singleBookmarkDir.saveLocation -ne $location) {
             # Deregister exit event for current instance of BookmarkDirectory
-            $bookmark.DisableSaveOnExit();
-            $bookmark = $null;
+            [BookmarkDirectory]::singleBookmarkDir.DisableSaveOnExit();
 
-            # Create a new instance of BookmarkDirectory
-            [BookmarkDirectory]::new($customLocation);
+            # Create a new instance of BookmarkDirectory, replacing $this.saveLocation
+            [BookmarkDirectory]::singleBookmarkDir = [BookmarkDirectory]::new($location);
+
+            # Save bookmarks on exit
+            [BookmarkDirectory]::singleBookmarkDir.EnableSaveOnExit();
         }
 
         return [BookmarkDirectory]::singleBookmarkDir;
     }
 
     # Update the "last session directory" property, typically invoked before exit
-    [void] UpdateLastSessionDirectory([String] $path) {
+    [void] UpdateLastSessionDirectory([string] $path) {
         $this.LastSessionDirectory = $path;
     }
 
     # Write bookmark data to disk, typically invoked before exit
-    [void] SaveBookmarkDirectory([String] $path) {
+    [void] SaveBookmarkDirectory([string] $path) {
         try {
             $overwriteGranted = $true;
 
-            if ((Get-Item -Path $path).LastWriteTime -gt $this.saveLocationLastWriteTime) {
+            # Check before modifying a configuration modified by another PowerShell session
+            if ($this.saveLocation -eq $path -and (Get-Item -Path $path).LastWriteTime -gt $this.saveLocationLastWriteTime) {
                 $overwriteGranted = $this.promptOverwriteConfiguration();
             }
 
@@ -95,11 +87,11 @@ Class BookmarkDirectory {
     }
 
     # Load previous bookmark data, typically at the beginning of a session
-    [void] LoadBookmarkDirectory([String] $path) {
-        try {
-            # Save the last write time of the file
-            $this.saveLocationLastWriteTime = (Get-Item -Path $path).LastWriteTime;
+    [void] LoadBookmarkDirectory([string] $path) {
+        # Save the last write time of the file
+        $this.saveLocationLastWriteTime = (Get-Item -Path $path).LastWriteTime;
 
+        try {
             # PSObject with bookmark directory properties from prior session
             $deserializedBookmarks = Import-Clixml $path;
             
@@ -123,20 +115,29 @@ Class BookmarkDirectory {
         }
     }
 
+    [void] EnableSaveOnExit() {
+        $saveBookmarksEventSubscriber = Register-EngineEvent PowerShell.Exiting -Action {
+            [BookmarkDirectory]::singleBookmarkDir.UpdateLastSessionDirectory((Get-Location).Path);
+            [BookmarkDirectory]::singleBookmarkDir.SaveBookmarkDirectory([BookmarkDirectory]::defaultSaveLocation);
+        }
+
+        # Save event subscriber ID for potential later deregistration
+        [BookmarkDirectory]::singleBookmarkDir.eventSubscriptionId = $saveBookmarksEventSubscriber.Id;
+    }
+
     [void] DisableSaveOnExit() {
         # Unregister the event to save bookmark data
         Get-EventSubscriber `
-        |   Where-Object Id -eq [BookmarkDirectory]::singleBookmarkDir.eventSubscriberId `
-        |   Unregister-Event;
+         |  Where-Object SubscriptionId -eq [BookmarkDirectory]::singleBookmarkDir.eventSubscriptionId `
+         |  Unregister-Event;
     }
 
     # Prompt the user to overwrite the bookmark configuratino, default to $true
     [bool] promptOverwriteConfiguration() {
         $title = "Override Bookmark Configuration";
-        $message = "
-            Another PowerShell session has updated your Bookmark configuration.
-            Would you like to overwrite this update with the Bookmark configuration
-            from this session?";
+        $message = "Another PowerShell session has updated your Bookmark configuration. " +
+            "Would you like to overwrite this update with the Bookmark configuration " +
+            "from this session?";
         
         $yes = [System.Management.Automation.Host.ChoiceDescription]::new(
             "&Yes", "Overwrites the PowerShell Bookmark configuration updated from another session");
