@@ -14,7 +14,7 @@ else {
 }
 
 # Dot-source all source files, starting with any classes
-"$moduleRoot\PrivateClasses\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
+"$moduleRoot\Classes\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
 "$moduleRoot\Public\*.ps1" | Resolve-Path | ForEach-Object { . $PSItem.ProviderPath }
 
 # Create aliases for interacting with bookmarks
